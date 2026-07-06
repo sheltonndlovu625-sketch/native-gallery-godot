@@ -1,0 +1,27 @@
+# Godot
+.import/
+export.cfg
+export_presets.cfg
+*.tmp
+
+# Build artifacts
+*.o
+*.os
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.framework
+demo/bin/*
+!demo/bin/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
