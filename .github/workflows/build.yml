@@ -29,8 +29,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Clone godot-cpp
+        run: |
+          git clone --depth 1 --branch 4.2 https://github.com/godotengine/godot-cpp.git
 
       - name: Setup Python
         uses: actions/setup-python@v5
