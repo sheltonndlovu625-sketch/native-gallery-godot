@@ -30,7 +30,6 @@ using namespace godot;
     }
 
     if (self.gallery->allow_multiple) {
-        // Multiple selection: load all items asynchronously
         __block NSMutableArray *pathStrings = [NSMutableArray array];
         dispatch_group_t group = dispatch_group_create();
         dispatch_queue_t arrayQueue = dispatch_queue_create("com.nativegallery.array", DISPATCH_QUEUE_SERIAL);
@@ -61,7 +60,6 @@ using namespace godot;
             }
         });
     } else {
-        // Single selection
         PHPickerResult *result = results[0];
         [self loadResult:result completion:^(NSString *path) {
             if (path && self.gallery) {
@@ -78,7 +76,8 @@ using namespace godot;
 
 - (void)loadResult:(PHPickerResult *)result completion:(void (^)(NSString *))completion {
     NSItemProvider *provider = result.itemProvider;
-    NSString *typeIdentifier = self.is_video ? UTTypeMovie.identifier : UTTypeImage.identifier;
+    // Use raw UTType strings to avoid @available compiler issues on iOS 14+
+    NSString *typeIdentifier = self.is_video ? @"public.movie" : @"public.image";
 
     if ([provider hasItemConformingToTypeIdentifier:typeIdentifier]) {
         [provider loadFileRepresentationForTypeIdentifier:typeIdentifier completionHandler:^(NSURL *url, NSError *error) {
@@ -92,7 +91,7 @@ using namespace godot;
                 NSString *destPath = [tmpDir stringByAppendingPathComponent:fileName];
                 NSURL *destURL = [NSURL fileURLWithPath:destPath];
 
-                [fm removeItemAtURL:destURL error:nil]; // Ignore if not exists
+                [fm removeItemAtURL:destURL error:nil];
                 NSError *copyError = nil;
                 [fm copyItemAtURL:url toURL:destURL error:&copyError];
 
@@ -159,9 +158,6 @@ void NativeGallery::_pick_native_video(bool p_multiple) {
 }
 
 void NativeGallery::_scan_media(const String &p_path) {
-    // iOS does not require explicit media scanning like Android.
-    // Photos saved to the camera roll are automatically indexed.
-    // If you need to save to the Photos library, use PHPhotoLibrary.
     UtilityFunctions::print("NativeGallery: scan_media is a no-op on iOS (path: ", p_path, ")");
 }
 
