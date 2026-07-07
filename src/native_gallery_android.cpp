@@ -7,22 +7,14 @@
 
 using namespace godot;
 
-// The Android implementation communicates with a Godot Android Plugin
-// registered as "NativeGalleryAndroid". The plugin handles the
-// native Intent launching and Activity results.
-//
-// See android/NativeGalleryPlugin.java for the Java side.
-
 void NativeGallery::_pick_native_image(bool p_multiple) {
     Object *plugin = Engine::get_singleton()->get_singleton("NativeGalleryAndroid");
     if (!plugin) {
-        emit_signal("error", 1, "NativeGalleryAndroid plugin not found. "
-            "Ensure the Android plugin is built and enabled in your export preset.");
+        emit_signal("error", 1, "NativeGalleryAndroid plugin not found. Ensure the Android plugin is built and enabled in your export preset.");
         return;
     }
-
     plugin->call("pickImage", p_multiple);
-    set_process(true); // Start polling for result
+    set_process(true);
 }
 
 void NativeGallery::_pick_native_video(bool p_multiple) {
@@ -31,7 +23,6 @@ void NativeGallery::_pick_native_video(bool p_multiple) {
         emit_signal("error", 1, "NativeGalleryAndroid plugin not found.");
         return;
     }
-
     plugin->call("pickVideo", p_multiple);
     set_process(true);
 }
@@ -47,24 +38,19 @@ void NativeGallery::_scan_media(const String &p_path) {
 
 void NativeGallery::_poll_android() {
     Object *plugin = Engine::get_singleton()->get_singleton("NativeGalleryAndroid");
-    if (!plugin) {
-        return;
-    }
-
-    // Check if the plugin has a result waiting
+    if (!plugin) return;
+    
     bool has_result = plugin->call("hasResult");
-    if (!has_result) {
-        return;
-    }
-
-    set_process(false); // Stop polling
-
+    if (!has_result) return;
+    
+    set_process(false);
+    
     bool cancelled = plugin->call("wasCancelled");
     if (cancelled) {
         emit_signal("cancelled");
         return;
     }
-
+    
     if (!allow_multiple) {
         String path = plugin->call("getLastResult");
         if (current_pick_type == PICK_TYPE_IMAGE) {
@@ -82,4 +68,4 @@ void NativeGallery::_poll_android() {
     }
 }
 
-#endif // __ANDROID__
+#endif
