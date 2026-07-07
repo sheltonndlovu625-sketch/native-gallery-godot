@@ -1,0 +1,3 @@
+#!/bin/sh
+# Gradle wrapper fallback - CI downloads the real wrapper
+exec gradle "$@"
