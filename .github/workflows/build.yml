@@ -20,6 +20,15 @@ jobs:
           - platform: android
             os: ubuntu-22.04
             target: template_release
+            arch: arm64
+          - platform: android
+            os: ubuntu-22.04
+            target: template_release
+            arch: arm32
+          - platform: android
+            os: ubuntu-22.04
+            target: template_release
+            arch: x86_64
           - platform: ios
             os: macos-latest
             target: template_release
@@ -53,15 +62,15 @@ jobs:
         shell: bash
         run: |
           cd godot-cpp
-          scons platform=${{ matrix.platform }} target=${{ matrix.target }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          scons platform=${{ matrix.platform }} target=${{ matrix.target }} ${{ matrix.arch && format('arch={0}', matrix.arch) || '' }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
       - name: Build extension
         shell: bash
         run: |
-          scons platform=${{ matrix.platform }} target=${{ matrix.target }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          scons platform=${{ matrix.platform }} target=${{ matrix.target }} ${{ matrix.arch && format('arch={0}', matrix.arch) || '' }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-upload-artifact@v4
         with:
-          name: native_gallery-${{ matrix.platform }}-${{ matrix.target }}
+          name: native_gallery-${{ matrix.platform }}-${{ matrix.arch || 'universal' }}-${{ matrix.target }}
           path: demo/bin/*
