@@ -16,7 +16,7 @@ using namespace godot;
 
 @implementation NativeGalleryIOSDelegate
 
-- (void)picker:(PHPickerViewController *)picker didFinishPicking:(NSArray<PHPickerResult *> *)results {
+- (void)picker:(PHPickerViewController *)picker didFinishPicking:(NSArray<PHPickerResult *> *)results API_AVAILABLE(ios(14.0)) {
     [picker dismissViewControllerAnimated:YES completion:nil];
 
     if (results.count == 0) {
@@ -73,39 +73,35 @@ using namespace godot;
     }
 }
 
-- (void)loadResult:(PHPickerResult *)result completion:(void (^)(NSString *))completion {
-    if (@available(iOS 14, *)) {
-        NSItemProvider *provider = result.itemProvider;
-        NSString *typeIdentifier = self.is_video ? @"public.movie" : @"public.image";
+- (void)loadResult:(PHPickerResult *)result completion:(void (^)(NSString *))completion API_AVAILABLE(ios(14.0)) {
+    NSItemProvider *provider = result.itemProvider;
+    NSString *typeIdentifier = self.is_video ? @"public.movie" : @"public.image";
 
-        if ([provider hasItemConformingToTypeIdentifier:typeIdentifier]) {
-            [provider loadFileRepresentationForTypeIdentifier:typeIdentifier completionHandler:^(NSURL *url, NSError *error) {
-                if (url && !error) {
-                    NSFileManager *fm = [NSFileManager defaultManager];
-                    NSString *tmpDir = NSTemporaryDirectory();
-                    NSString *fileName = [url lastPathComponent];
-                    if (!fileName || fileName.length == 0) {
-                        fileName = self.is_video ? @"picked_video.mp4" : @"picked_image.png";
-                    }
-                    NSString *destPath = [tmpDir stringByAppendingPathComponent:fileName];
-                    NSURL *destURL = [NSURL fileURLWithPath:destPath];
-
-                    [fm removeItemAtURL:destURL error:nil];
-                    NSError *copyError = nil;
-                    [fm copyItemAtURL:url toURL:destURL error:&copyError];
-
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        completion(copyError ? nil : destPath);
-                    });
-                } else {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        completion(nil);
-                    });
+    if ([provider hasItemConformingToTypeIdentifier:typeIdentifier]) {
+        [provider loadFileRepresentationForTypeIdentifier:typeIdentifier completionHandler:^(NSURL *url, NSError *error) {
+            if (url && !error) {
+                NSFileManager *fm = [NSFileManager defaultManager];
+                NSString *tmpDir = NSTemporaryDirectory();
+                NSString *fileName = [url lastPathComponent];
+                if (!fileName || fileName.length == 0) {
+                    fileName = self.is_video ? @"picked_video.mp4" : @"picked_image.png";
                 }
-            }];
-        } else {
-            completion(nil);
-        }
+                NSString *destPath = [tmpDir stringByAppendingPathComponent:fileName];
+                NSURL *destURL = [NSURL fileURLWithPath:destPath];
+
+                [fm removeItemAtURL:destURL error:nil];
+                NSError *copyError = nil;
+                [fm copyItemAtURL:url toURL:destURL error:&copyError];
+
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    completion(copyError ? nil : destPath);
+                });
+            } else {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    completion(nil);
+                });
+            }
+        }];
     } else {
         completion(nil);
     }
