@@ -77,8 +77,45 @@ jobs:
             scons platform=${{ matrix.platform }} target=${{ matrix.target }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
           fi
 
-      - name: Upload artifact
+      - name: Upload extension artifact
         uses: actions/upload-artifact@v4
         with:
           name: native_gallery-${{ matrix.platform }}-${{ matrix.arch || 'universal' }}-${{ matrix.target }}
           path: demo/bin/*
+
+  build-android-plugin:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install Gradle
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gradle
+
+      - name: Download Godot Android library
+        run: |
+          mkdir -p android/libs
+          wget -q https://downloads.tuxfamily.org/godotengine/4.2.0/Godot_v4.2.0-stable_export_templates.tpz -O templates.tpz
+          unzip -q templates.tpz -d templates
+          unzip -q templates/android_source.zip -d android_source
+          cp android_source/libs/godot-lib.aar android/libs/
+
+      - name: Build AAR with Gradle
+        run: |
+          cd android
+          gradle wrapper --gradle-version 8.4
+          ./gradlew assembleRelease
+
+      - name: Upload AAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NativeGalleryAndroid-aar
+          path: android/build/outputs/aar/*.aar
