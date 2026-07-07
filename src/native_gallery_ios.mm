@@ -28,7 +28,7 @@ using namespace godot;
         return;
     }
 
-    if (self.gallery->allow_multiple) {
+    if (self.gallery->get_allow_multiple()) {
         __block NSMutableArray *pathStrings = [NSMutableArray array];
         dispatch_group_t group = dispatch_group_create();
         dispatch_queue_t arrayQueue = dispatch_queue_create("com.nativegallery.array", DISPATCH_QUEUE_SERIAL);
