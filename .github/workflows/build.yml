@@ -62,15 +62,23 @@ jobs:
         shell: bash
         run: |
           cd godot-cpp
-          scons platform=${{ matrix.platform }} target=${{ matrix.target }} ${{ matrix.arch && format('arch={0}', matrix.arch) || '' }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          if [ -n "${{ matrix.arch }}" ]; then
+            scons platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          else
+            scons platform=${{ matrix.platform }} target=${{ matrix.target }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          fi
 
       - name: Build extension
         shell: bash
         run: |
-          scons platform=${{ matrix.platform }} target=${{ matrix.target }} ${{ matrix.arch && format('arch={0}', matrix.arch) || '' }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          if [ -n "${{ matrix.arch }}" ]; then
+            scons platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          else
+            scons platform=${{ matrix.platform }} target=${{ matrix.target }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          fi
 
       - name: Upload artifact
-        uses: actions/upload-upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: native_gallery-${{ matrix.platform }}-${{ matrix.arch || 'universal' }}-${{ matrix.target }}
           path: demo/bin/*
