@@ -9,7 +9,6 @@
 
 using namespace godot;
 
-// Objective-C delegate for PHPickerViewController
 @interface NativeGalleryIOSDelegate : NSObject <PHPickerViewControllerDelegate>
 @property (nonatomic, assign) NativeGallery *gallery;
 @property (nonatomic, assign) bool is_video;
@@ -75,35 +74,38 @@ using namespace godot;
 }
 
 - (void)loadResult:(PHPickerResult *)result completion:(void (^)(NSString *))completion {
-    NSItemProvider *provider = result.itemProvider;
-    // Use raw UTType strings to avoid @available compiler issues on iOS 14+
-    NSString *typeIdentifier = self.is_video ? @"public.movie" : @"public.image";
+    if (@available(iOS 14, *)) {
+        NSItemProvider *provider = result.itemProvider;
+        NSString *typeIdentifier = self.is_video ? @"public.movie" : @"public.image";
 
-    if ([provider hasItemConformingToTypeIdentifier:typeIdentifier]) {
-        [provider loadFileRepresentationForTypeIdentifier:typeIdentifier completionHandler:^(NSURL *url, NSError *error) {
-            if (url && !error) {
-                NSFileManager *fm = [NSFileManager defaultManager];
-                NSString *tmpDir = NSTemporaryDirectory();
-                NSString *fileName = [url lastPathComponent];
-                if (!fileName || fileName.length == 0) {
-                    fileName = self.is_video ? @"picked_video.mp4" : @"picked_image.png";
+        if ([provider hasItemConformingToTypeIdentifier:typeIdentifier]) {
+            [provider loadFileRepresentationForTypeIdentifier:typeIdentifier completionHandler:^(NSURL *url, NSError *error) {
+                if (url && !error) {
+                    NSFileManager *fm = [NSFileManager defaultManager];
+                    NSString *tmpDir = NSTemporaryDirectory();
+                    NSString *fileName = [url lastPathComponent];
+                    if (!fileName || fileName.length == 0) {
+                        fileName = self.is_video ? @"picked_video.mp4" : @"picked_image.png";
+                    }
+                    NSString *destPath = [tmpDir stringByAppendingPathComponent:fileName];
+                    NSURL *destURL = [NSURL fileURLWithPath:destPath];
+
+                    [fm removeItemAtURL:destURL error:nil];
+                    NSError *copyError = nil;
+                    [fm copyItemAtURL:url toURL:destURL error:&copyError];
+
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        completion(copyError ? nil : destPath);
+                    });
+                } else {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        completion(nil);
+                    });
                 }
-                NSString *destPath = [tmpDir stringByAppendingPathComponent:fileName];
-                NSURL *destURL = [NSURL fileURLWithPath:destPath];
-
-                [fm removeItemAtURL:destURL error:nil];
-                NSError *copyError = nil;
-                [fm copyItemAtURL:url toURL:destURL error:&copyError];
-
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    completion(copyError ? nil : destPath);
-                });
-            } else {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    completion(nil);
-                });
-            }
-        }];
+            }];
+        } else {
+            completion(nil);
+        }
     } else {
         completion(nil);
     }
